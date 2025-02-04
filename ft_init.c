@@ -6,51 +6,54 @@
 /*   By: bekarada <bekarada@student.42istanbul.c    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/03 11:32:53 by bekarada          #+#    #+#             */
-/*   Updated: 2025/02/03 18:20:42 by bekarada         ###   ########.fr       */
+/*   Updated: 2025/02/04 18:52:54 by bekarada         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-static void	fork_mutex(t_table **table)
+int	ft_init_monitor_mutexes(t_monitor *monitor)
 {
-	int				i;
-	pthread_mutex_t	*forks;
+	if (pthread_mutex_init(&monitor->check_dead, NULL) != 0)
+		return (ft_putstr_fd("failed to initialize a mutex", 2), 1);
+	if (pthread_mutex_init(&monitor->check_last_meal, NULL) != 0)
+		return (ft_putstr_fd("failed to initialize a mutex", 2), 1);
+	if (pthread_mutex_init(&monitor->times_eat, NULL) != 0)
+		return (ft_putstr_fd("failed to initialize a mutex", 2), 1);
+	if (pthread_mutex_init(&monitor->message_mutex, NULL) != 0)
+		return (ft_putstr_fd("failed to initialize a mutex", 2), 1);
+	return (0);
+}
+
+void	ft_init_philos(t_monitor *monitor, t_philo *philo,
+		pthread_mutex_t *forks)
+{
+	int	i;
 
 	i = 0;
-	forks = (*table)->forks;
-	while (i < (*table)->num_philos)
-		pthread_mutex_init(&forks[i++], NULL);
-	i = 0;
-	while (i++ < (*table)->num_philos)
+	while (i < monitor->nbr_of_philo)
 	{
-		(*table)->philo[i].left_fork = &forks[i];
-		(*table)->philo[i].right_fork = &forks[(i + 1) % (*table)->num_philos];
+		philo[i].id_philo = i + 1;
+		philo[i].fork_l = &forks[i];
+		philo[i].fork_r = &forks[(i + 1) % monitor->nbr_of_philo];
+		philo[i].times_ate = 0;
+		philo[i].last_time_ate = ft_set_time();
+		philo[i].start_time = ft_set_time();
+		philo[i].monitor = monitor;
+		i++;
 	}
 }
 
-void	ft_init(t_table **table, int philo_number)
+int	ft_init_mutexes(pthread_mutex_t	*forks, int nbr_of_philo)
 {
-	*table = malloc(sizeof(t_table));
-	if (!*table)
-		return ;
-	(*table)->num_philos = philo_number;
-	(*table)->ready_philos = false;
-	pthread_mutex_init(&(*table)->meals_mutex, NULL);
-	pthread_mutex_init(&(*table)->write_mutex, NULL);
-	pthread_mutex_init(&(*table)->table_mutex, NULL);
-	(*table)->philo = malloc(sizeof(t_philo) * philo_number);
-	if (!(*table)->philo)
+	int	i;
+
+	i = 0;
+	while (i < nbr_of_philo)
 	{
-		free(*table);
-		return ;
+		if (pthread_mutex_init(&forks[i], NULL) != 0)
+			return (ft_putstr_fd("failed to initialize a mutex", 2), 1);
+		i++;
 	}
-	(*table)->forks = malloc(sizeof(pthread_mutex_t) * philo_number);
-	if (!(*table)->forks)
-	{
-		free((*table)->philo);
-		free(*table);
-		return ;
-	}
-	fork_mutex(table);
+	return (0);
 }

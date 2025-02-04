@@ -5,78 +5,104 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: bekarada <bekarada@student.42istanbul.c    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/02 17:30:18 by bekarada          #+#    #+#             */
-/*   Updated: 2025/02/04 13:35:40 by bekarada         ###   ########.fr       */
+/*   Created: 2025/02/04 07:22:17 by hugozlu           #+#    #+#             */
+/*   Updated: 2025/02/04 18:47:59 by bekarada         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-void	handle_error(char *str)
+static void	ft_routine_case_one_philo(t_philo *philo)
 {
-	if (str)
-		write(2, str, (ft_strlen(str) + 1));
+	pthread_mutex_lock(philo->fork_r);
+	ft_print_message("has taken a fork", philo);
+	usleep(philo->monitor->time_to_die * 1000);
+	pthread_mutex_unlock(philo->fork_r);
 }
 
-static void	ft_assign(int argc, char *argv[], t_table *table)
+void	*ft_routine(void *arg)
+{
+	t_philo			*philo;
+
+	philo = (t_philo *)arg;
+	if (philo->monitor->nbr_of_philo == 1)
+	{
+		ft_routine_case_one_philo(philo);
+		return (NULL);
+	}
+	while (!ft_stop_simulation(philo->monitor))
+	{
+		ft_philo_eat_and_sleep(philo);
+		ft_print_message("thinking", philo);
+	}
+	return (NULL);
+}
+
+static int	ft_checkarg(int argc, char **argv)
 {
 	int	i;
-	int	philo_number;
 
 	i = 0;
-	philo_number = ft_atoi(argv[1]);
-	while (i++ < philo_number)
+	while (argv[++i])
+		if (ft_find_alpha_in_list(argv[i]))
+			return (printf("Invalid arguments\n"), 1);
+	if (argc == 1)
+		return (1);
+	else if ((argc == 5) || (argc == 6))
 	{
-		table->philo[i].id = i + 1;
-		table->philo[i].eat_meal = 0;
-		table->philo[i].eaten_meal = 0;
-		table->philo[i].nbr_of_philo = philo_number;
-		table->philo[i].time_to_die = ft_atoi(argv[2]);
-		table->philo[i].time_to_eat = ft_atoi(argv[3]);
-		table->philo[i].time_to_sleep = ft_atoi(argv[4]);
-		table->philo[i].last_meal = get_time();
-		table->philo[i].count_eat = -1;
-		if (argc == 6)
-			table->philo[i].count_eat = ft_atoi(argv[5]);
-		table->philo[i].write_mutex = &(table->write_mutex);
-		table->philo[i].meal_mutex = &(table->meals_mutex);
-		table->philo[i].table = table;
+		if (ft_atoi(argv[1]) > MAX)
+			return (printf("To exceded number of philos\n"), 1);
+		return (0);
 	}
-}
-
-static int	ft_argcontrol(int argc, char *argv[])
-{
-	int	i;
-
-	if (argc < 5 || argc > 6)
-		handle_error("Error\nInvalid number of arguments\n");
-	i = 1;
-	while (i < argc)
-	{
-		if (!ft_isnum(argv[i]) || ft_atoi(argv[i]) < 1
-			|| ft_atoi(argv[i]) > 2147483647)
-			return (handle_error("Error\nInvalid argument values\n"), 1);
-		i++;
-	}
-	if (ft_atoi(argv[1]) > 200 || ft_atoi(argv[2]) < 60 || ft_atoi(argv[3]) < 60
-		|| ft_atoi(argv[4]) < 60)
-		return (handle_error("Error\nWrong argument values\n"), 1);
-	if (argc == 6 && ft_atoi(argv[5]) <= 0)
-		return (handle_error("5th parameter cannot be below or equal 0\n"), 1);
+	else if (argc < 6)
+		return (printf("To few arguments\n"), 1);
+	else
+		return (printf("To Many arguments\n"), 1);
 	return (0);
 }
 
-int	main(int argc, char *argv[])
+int	ft_assign(int argc, char **argv, t_monitor *monitor)
 {
-	t_table	*table;
-
-	table = NULL;
-	if (ft_argcontrol(argc, argv) != 0)
-		return (handle_error("Error\nArguments fail\n"), 1);
-	ft_init(&table, ft_atoi(argv[1]));
-	if (!table)
+	if (ft_checkarg(argc, argv))
 		return (1);
-	ft_assign(argc, argv, table);
-	ft_create_threads(table);
-	ft_destroy(table, 0);
+	monitor->nbr_of_philo = ft_atoi(argv[1]);
+	monitor->time_to_die = ft_atoi(argv[2]);
+	monitor->time_to_eat = ft_atoi(argv[3]);
+	monitor->time_to_sleep = ft_atoi(argv[4]);
+	monitor->stop_simulation = 0;
+	if (argv[5])
+		monitor->must_eat = ft_atoi(argv[5]);
+	else
+		monitor->must_eat = 0;
+	return (0);
+}
+
+int	main(int argc, char **argv)
+{
+	t_monitor			monitor;
+	t_philo				*philo;
+	pthread_mutex_t		*forks;
+
+	if (ft_assign(argc, argv, &monitor) == 1)
+		return (0);
+	ft_init_monitor_mutexes(&monitor);
+	philo = (t_philo *)malloc(sizeof(t_philo) * monitor.nbr_of_philo);
+	if (!philo)
+		return (1);
+	forks = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t)
+			* monitor.nbr_of_philo);
+	if (!forks)
+		return (1);
+	ft_init_mutexes(forks, monitor.nbr_of_philo);
+	ft_init_philos(&monitor, philo, forks);
+	if (pthread_create(&monitor.monitor_thread, NULL, ft_monitor, philo) != 0)
+		return (ft_putstr_fd("failed to create  a tread", 2), 1);
+	ft_create_and_join_philo(philo, monitor.nbr_of_philo);
+	if (pthread_join(monitor.monitor_thread, NULL) != 0)
+		return (ft_putstr_fd("failde to join a thread", 2), 1);
+	ft_destroy_mutexes(forks, monitor.nbr_of_philo);
+	ft_destroy_monitor(&monitor);
+	free(philo);
+	free(forks);
+	return (0);
 }

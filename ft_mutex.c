@@ -1,27 +1,33 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_time.c                                          :+:      :+:    :+:   */
+/*   ph_mutexes.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: bekarada <bekarada@student.42istanbul.c    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/04 07:22:50 by hugozlu           #+#    #+#             */
-/*   Updated: 2025/02/04 18:58:50 by bekarada         ###   ########.fr       */
+/*   Created: 2025/02/04 07:22:36 by hugozlu           #+#    #+#             */
+/*   Updated: 2025/02/04 18:42:52 by bekarada         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-# include <stddef.h>
-# include <sys/time.h>
+#include "philo.h"
 
-size_t	ft_set_time(void)
+void	ft_destroy_mutexes(pthread_mutex_t *forks, int nbr_of_philo)
 {
-	struct timeval	t;
+	int	i;
 
-	gettimeofday(&t, NULL);
-	return ((t.tv_sec * 1000) + (t.tv_usec / 1000));
+	i = 0;
+	while (i < nbr_of_philo)
+	{
+		pthread_mutex_destroy(&forks[i]);
+		i++;
+	}
 }
 
-size_t	ft_time_diff(size_t start_time)
+void	ft_destroy_monitor(t_monitor *monitor)
 {
-	return (ft_set_time() - start_time);
+	pthread_mutex_destroy(&monitor->message_mutex);
+	pthread_mutex_destroy(&monitor->check_dead);
+	pthread_mutex_destroy(&monitor->check_last_meal);
+	pthread_mutex_destroy(&monitor->times_eat);
 }
