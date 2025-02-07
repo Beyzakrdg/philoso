@@ -1,66 +1,67 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ph_monitor.c                                       :+:      :+:    :+:   */
+/*   ft_prog.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: bekarada <bekarada@student.42istanbul.c    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/04 07:22:23 by hugozlu           #+#    #+#             */
+/*   Created: 2025/02/04 07:22:23 by bekarada          #+#    #+#             */
 /*   Updated: 2025/02/04 18:42:35 by bekarada         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-static int	ft_all_philos_have_ate(t_philo *philo, t_monitor *monitor)
+static int	ft_all_philos_have_ate(t_philo *philo, t_prog *prog)
 {
 	int		i;
 
 	i = 0;
-	while (i < monitor->nbr_of_philo)
+	while (i < prog->nbr_of_philo)
 	{
-		if (ft_check_times_ate(&philo[i]) < monitor->must_eat)
+		if (ft_check_times_ate(&philo[i]) < prog->must_eat)
 			return (0);
 		i++;
 	}
-	if (monitor->must_eat > 0)
+	if (prog->must_eat > 0)
 	{
-		ft_inform_stop_simulation(monitor, 1);
+		ft_inform_stop_simulation(prog, 1);
 		return (1);
 	}
 	return (0);
 }
 
-static	int	ft_set_philo_dead(t_monitor *monitor, t_philo *philo)
+static	int	ft_set_philo_dead(t_prog *prog, t_philo *philo)
 {
-	int	index;
+	int	i;
 
-	index = -1;
-	while (++index < monitor->nbr_of_philo)
+	i = 0;
+	while (i < prog->nbr_of_philo)
 	{
-		if ((ft_set_time() - ft_check_last_time_ate(&philo[index]))
-			> monitor->time_to_die + 2)
+		if ((ft_get_time() - ft_check_last_time_ate(&philo[i]))
+			> prog->time_to_die + 2)
 		{
-			ft_print_message("died", &philo[index]);
-			ft_inform_stop_simulation(monitor, 1);
+			ft_print_msg("died", &philo[i]);
+			ft_inform_stop_simulation(prog, 1);
 			return (1);
 		}
+		i++;
 	}
 	return (0);
 }
 
-void	*ft_monitor(void *arg)
+void	*ft_program(void *arg)
 {
-	t_monitor		*monitor;
-	t_philo			*philo;
+	t_prog	*prog;
+	t_philo	*philo;
 
 	philo = (t_philo *)arg;
-	monitor = philo[0].monitor;
-	while (!ft_stop_simulation(monitor))
+	prog = philo[0].prog;
+	while (!ft_stop_simulation(prog))
 	{
-		if (ft_set_philo_dead(monitor, philo))
+		if (ft_set_philo_dead(prog, philo))
 			break ;
-		if (ft_all_philos_have_ate(philo, monitor))
+		if (ft_all_philos_have_ate(philo, prog))
 			break ;
 		usleep(1000);
 	}

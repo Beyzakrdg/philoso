@@ -1,11 +1,11 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ph_mutexes.c                                       :+:      :+:    :+:   */
+/*   ft_destroy.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: bekarada <bekarada@student.42istanbul.c    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/04 07:22:36 by hugozlu           #+#    #+#             */
+/*   Created: 2025/02/04 07:22:36 by bekarada          #+#    #+#             */
 /*   Updated: 2025/02/04 18:42:52 by bekarada         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
@@ -24,10 +24,10 @@ void	ft_destroy_mutexes(pthread_mutex_t *forks, int nbr_of_philo)
 	}
 }
 
-void	ft_destroy_monitor(t_monitor *monitor)
+void	ft_destroy_prog(t_prog *prog)
 {
-	pthread_mutex_destroy(&monitor->message_mutex);
-	pthread_mutex_destroy(&monitor->check_dead);
-	pthread_mutex_destroy(&monitor->check_last_meal);
-	pthread_mutex_destroy(&monitor->times_eat);
+	pthread_mutex_destroy(&prog->msg_mutex);
+	pthread_mutex_destroy(&prog->check_dead);
+	pthread_mutex_destroy(&prog->check_last_meal);
+	pthread_mutex_destroy(&prog->times_eat);
 }
